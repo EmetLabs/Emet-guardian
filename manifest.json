@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "EMET Guardian",
+  "version": "1.0.0",
+  "description": "Solana wallet security - intercepts and analyzes transactions for drain patterns before signing",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["phantomHook.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "public/icon.png",
+    "48": "public/icon.png",
+    "128": "public/icon.png"
+  },
+  "action": {
+    "default_icon": "public/icon.png",
+    "default_title": "EMET Guardian - Wallet Security"
+  }
+}

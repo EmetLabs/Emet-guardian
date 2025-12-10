@@ -1,0 +1,12 @@
+# Claude Code
+.claude/
+
+# Testing
+test/
+test.html
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
