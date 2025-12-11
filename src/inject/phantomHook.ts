@@ -387,315 +387,254 @@
 
   function showWarningModal(reasons: string[]): Promise<'cancel' | 'proceed'> {
     return new Promise((resolve) => {
-      // Create overlay container with HEAVY dark translucent background
+      // Create overlay - clean, minimal backdrop
       const container = document.createElement('div');
       container.id = 'emet-guardian-modal';
-      // Inline styles for isolation and critical rendering
       container.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(5, 5, 8, 0.90);
-        backdrop-filter: blur(24px) saturate(120%);
-        -webkit-backdrop-filter: blur(24px) saturate(120%);
-        z-index: 2147483647; /* Max z-index */
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 2147483647;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 24px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        color: #ffffff;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         opacity: 0;
-        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        overflow: hidden; /* Contain particles */
+        transition: opacity 0.2s ease;
       `;
 
-      // Particle Container (Background Layer)
-      const particleContainer = document.createElement('div');
-      particleContainer.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: -1;
-        overflow: hidden;
-      `;
-      container.appendChild(particleContainer);
-
-      // Modal Card
+      // Modal Card - clean, solid, professional
       const modal = document.createElement('div');
       modal.style.cssText = `
         position: relative;
-        max-width: 500px;
+        max-width: 420px;
         width: 100%;
-        background: linear-gradient(160deg, rgba(25, 25, 30, 0.8) 0%, rgba(10, 10, 12, 0.95) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 28px;
-        box-shadow: 
-          0 40px 80px rgba(0, 0, 0, 0.8),
-          0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-        padding: 48px 40px;
-        transform: scale(0.92) translateY(20px);
-        transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        background: #0a0a0a;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+        transform: translateY(8px);
+        transition: transform 0.2s ease;
+        overflow: hidden;
+      `;
+
+      // Header section with icon
+      const header = document.createElement('div');
+      header.style.cssText = `
+        padding: 24px 24px 0;
         display: flex;
-        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      `;
+
+      // Shield icon with X
+      const iconContainer = document.createElement('div');
+      iconContainer.style.cssText = `
+        width: 40px;
+        height: 40px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 10px;
+        display: flex;
         align-items: center;
-        backdrop-filter: blur(10px);
+        justify-content: center;
+        flex-shrink: 0;
+      `;
+      iconContainer.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
       `;
 
-      // Glow effect behind the modal
-      const glow = document.createElement('div');
-      glow.style.cssText = `
-        position: absolute;
-        top: -50%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120%;
-        height: 120%;
-        background: radial-gradient(circle, rgba(220, 38, 38, 0.12) 0%, transparent 60%);
-        pointer-events: none;
-        z-index: -1;
-      `;
-      modal.appendChild(glow);
+      const headerText = document.createElement('div');
+      headerText.style.cssText = `flex: 1;`;
 
-      // Header Text
-      const title = document.createElement('h1');
-      title.textContent = 'High Risk Transaction';
+      const title = document.createElement('h2');
+      title.textContent = 'Transaction Blocked';
       title.style.cssText = `
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0 0 12px 0;
-        text-align: center;
-        letter-spacing: -0.5px;
-        background: linear-gradient(to right, #fff, #ccc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fafafa;
+        margin: 0 0 4px;
+        letter-spacing: -0.01em;
       `;
 
       const subtitle = document.createElement('p');
-      subtitle.innerHTML = `EMET Guardian detected <strong style="color: #ef4444">${reasons.length} threats</strong>. Proceeding may cause asset loss.`;
+      subtitle.textContent = `${reasons.length} security ${reasons.length === 1 ? 'threat' : 'threats'} detected`;
       subtitle.style.cssText = `
-        font-size: 15px;
-        line-height: 1.5;
-        color: rgba(255, 255, 255, 0.6);
-        margin: 0 0 32px 0;
-        text-align: center;
-        max-width: 90%;
+        font-size: 13px;
+        color: #ef4444;
+        margin: 0;
+        font-weight: 500;
       `;
 
-      // Threat List Container
+      headerText.appendChild(title);
+      headerText.appendChild(subtitle);
+      header.appendChild(iconContainer);
+      header.appendChild(headerText);
+
+      // Threat list - compact, scannable
       const threatsList = document.createElement('div');
       threatsList.style.cssText = `
-        width: 100%;
+        padding: 16px 24px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        margin-bottom: 32px;
+        gap: 8px;
+        max-height: 240px;
+        overflow-y: auto;
       `;
 
-      // Populate Threats
-      reasons.forEach((reason, idx) => {
+      reasons.forEach((reason) => {
         const { title: threatTitle, description: threatDesc } = parseThreatInfo(reason);
 
-        const card = document.createElement('div');
-        card.style.cssText = `
+        const item = document.createElement('div');
+        item.style.cssText = `
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 12px;
-          padding: 16px;
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          transition: background 0.2s;
+          border-radius: 8px;
+          padding: 12px;
         `;
-        // Hover effect for cards via JS since we can't keyframe inline easily for interactive
-        card.onmouseenter = () => { card.style.background = 'rgba(255, 255, 255, 0.05)'; };
-        card.onmouseleave = () => { card.style.background = 'rgba(255, 255, 255, 0.03)'; };
 
-        card.innerHTML = `
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 13px; font-weight: 700; color: #ef4444; letter-spacing: 0.5px; margin-bottom: 4px; text-transform: uppercase;">${threatTitle}</div>
-            <div style="font-size: 13px; font-weight: 400; color: rgba(255, 255, 255, 0.8); line-height: 1.4; word-wrap: break-word;">${threatDesc}</div>
-          </div>
+        const itemTitle = document.createElement('div');
+        itemTitle.textContent = threatTitle;
+        itemTitle.style.cssText = `
+          font-size: 11px;
+          font-weight: 600;
+          color: #ef4444;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          margin-bottom: 4px;
         `;
-        threatsList.appendChild(card);
+
+        const itemDesc = document.createElement('div');
+        itemDesc.textContent = threatDesc;
+        itemDesc.style.cssText = `
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.4;
+        `;
+
+        item.appendChild(itemTitle);
+        item.appendChild(itemDesc);
+        threatsList.appendChild(item);
       });
 
-      // Warning Notice
-      const warningNotice = document.createElement('div');
-      warningNotice.style.cssText = `
-        background: rgba(251, 191, 36, 0.08);
-        border: 1px solid rgba(251, 191, 36, 0.2);
-        border-radius: 12px;
-        padding: 14px 16px;
-        margin-bottom: 28px;
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-      `;
-      warningNotice.innerHTML = `
-        <p style="
-          font-size: 13px;
-          font-weight: 400;
-          color: rgba(255, 255, 255, 0.8);
-          margin: 0;
-          line-height: 1.55;
-        ">
-          This transaction allows another party to spend or transfer your assets.
-          <strong style="color: #fbbf24;">If this was not intentional, do not continue.</strong>
-        </p>
+      // Divider
+      const divider = document.createElement('div');
+      divider.style.cssText = `
+        height: 1px;
+        background: rgba(255, 255, 255, 0.06);
+        margin: 0 24px;
       `;
 
-      // Action Buttons
-      const buttonsContainer = document.createElement('div');
-      buttonsContainer.style.cssText = `
-        width: 100%;
+      // Actions section
+      const actions = document.createElement('div');
+      actions.style.cssText = `
+        padding: 16px 24px 24px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
       `;
 
       const cancelButton = document.createElement('button');
-      cancelButton.textContent = 'Cancel Transaction';
+      cancelButton.textContent = 'Reject Transaction';
       cancelButton.style.cssText = `
         width: 100%;
-        padding: 16px;
+        padding: 12px 16px;
+        background: #fafafa;
+        color: #0a0a0a;
         border: none;
-        border-radius: 12px;
-        background: #ffffff;
-        color: #000000;
-        font-size: 16px;
-        font-weight: 600;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
-        transition: transform 0.1s, box-shadow 0.2s;
-        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        transition: all 0.15s ease;
       `;
-      cancelButton.onmouseenter = () => { cancelButton.style.transform = 'translateY(-1px)'; cancelButton.style.boxShadow = '0 6px 16px rgba(255, 255, 255, 0.15)'; };
-      cancelButton.onmouseleave = () => { cancelButton.style.transform = 'none'; cancelButton.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.1)'; };
+      cancelButton.onmouseenter = () => {
+        cancelButton.style.background = '#ffffff';
+        cancelButton.style.transform = 'translateY(-1px)';
+      };
+      cancelButton.onmouseleave = () => {
+        cancelButton.style.background = '#fafafa';
+        cancelButton.style.transform = 'none';
+      };
       cancelButton.onmousedown = () => { cancelButton.style.transform = 'scale(0.98)'; };
       cancelButton.onmouseup = () => { cancelButton.style.transform = 'translateY(-1px)'; };
 
       const proceedButton = document.createElement('button');
-      proceedButton.textContent = 'I understand the risks, proceed anyway';
+      proceedButton.textContent = 'Proceed anyway';
       proceedButton.style.cssText = `
         width: 100%;
-        padding: 14px;
+        padding: 12px 16px;
         background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 14px;
+        color: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s ease;
       `;
       proceedButton.onmouseenter = () => {
-        proceedButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-        proceedButton.style.color = 'rgba(255, 255, 255, 0.8)';
-        proceedButton.style.background = 'rgba(255, 255, 255, 0.05)';
+        proceedButton.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        proceedButton.style.color = 'rgba(255, 255, 255, 0.6)';
+        proceedButton.style.background = 'rgba(255, 255, 255, 0.03)';
       };
       proceedButton.onmouseleave = () => {
-        proceedButton.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        proceedButton.style.color = 'rgba(255, 255, 255, 0.5)';
+        proceedButton.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        proceedButton.style.color = 'rgba(255, 255, 255, 0.4)';
         proceedButton.style.background = 'transparent';
       };
+
+      actions.appendChild(cancelButton);
+      actions.appendChild(proceedButton);
 
       // Footer
       const footer = document.createElement('div');
       footer.style.cssText = `
-        margin-top: 24px;
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.2);
-        letter-spacing: 1px;
-        text-transform: uppercase;
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
       `;
-      footer.textContent = 'Protected by EMET Guardian';
+      footer.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span style="font-size: 11px; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.02em;">EMET Guardian</span>
+      `;
 
-      // Assemble
-      buttonsContainer.appendChild(cancelButton);
-      buttonsContainer.appendChild(proceedButton);
-
-      modal.appendChild(title);
-      modal.appendChild(subtitle);
+      // Assemble modal
+      modal.appendChild(header);
       modal.appendChild(threatsList);
-      modal.appendChild(warningNotice);
-      modal.appendChild(buttonsContainer);
+      modal.appendChild(divider);
+      modal.appendChild(actions);
       modal.appendChild(footer);
-
       container.appendChild(modal);
       document.body.appendChild(container);
 
-      // Create Particles (Increased Count and Visibility)
-      for (let i = 0; i < 50; i++) {
-        const p = document.createElement('div');
-        const size = Math.random() * 5 + 3; // Slightly larger
-        p.style.cssText = `
-          position: absolute;
-          width: ${size}px;
-          height: ${size}px;
-          background: rgba(255, 255, 255, 0.08); /* Increased opacity */
-          border-radius: 50%;
-          top: ${Math.random() * 100}%;
-          left: ${Math.random() * 100}%;
-          animation: emet-float-${i % 3} ${10 + Math.random() * 20}s infinite linear;
-          pointer-events: none;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.05); /* Glow */
-        `;
-        particleContainer.appendChild(p);
-      }
-
-      // Add styles for animations and hover states
-      const style = document.createElement('style');
-      style.id = 'emet-guardian-styles';
-      style.textContent = `
-        @keyframes emet-float-0 {
-          0% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(30px, -50px) rotate(120deg); }
-          66% { transform: translate(-20px, 20px) rotate(240deg); }
-          100% { transform: translate(0, 0) rotate(360deg); }
-        }
-        @keyframes emet-float-1 {
-          0% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(-40px, -80px) scale(1.5); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes emet-float-2 {
-          0% { transform: translate(0, 0); opacity: 0.1; }
-          50% { transform: translate(50px, 50px); opacity: 0.25; }
-          100% { transform: translate(0, 0); opacity: 0.1; }
-        }
-      `;
-      document.head.appendChild(style);
-
-      // Event Listeners
+      // Event handlers
       const cleanup = () => {
         container.style.opacity = '0';
-        modal.style.transform = 'scale(0.92) translateY(20px)';
+        modal.style.transform = 'translateY(8px)';
         setTimeout(() => {
-          if (container.parentNode) container.parentNode.removeChild(container);
+          container.remove();
           document.body.style.overflow = '';
-        }, 300);
+          window.removeEventListener('keydown', handleKeydown, true);
+        }, 200);
       };
 
-      const handleCancel = () => {
-        cleanup();
-        resolve('cancel');
-      };
-
-      const handleProceed = () => {
-        cleanup();
-        resolve('proceed');
-      };
+      const handleCancel = () => { cleanup(); resolve('cancel'); };
+      const handleProceed = () => { cleanup(); resolve('proceed'); };
 
       cancelButton.onclick = handleCancel;
       proceedButton.onclick = handleProceed;
 
-      // Prevent Key Escapes
       const handleKeydown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -704,13 +643,12 @@
       };
       window.addEventListener('keydown', handleKeydown, true);
 
-      // Lock Scroll
       document.body.style.overflow = 'hidden';
 
-      // Animate In
+      // Animate in
       requestAnimationFrame(() => {
         container.style.opacity = '1';
-        modal.style.transform = 'scale(1) translateY(0)';
+        modal.style.transform = 'translateY(0)';
       });
     });
   }

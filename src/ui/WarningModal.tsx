@@ -1,11 +1,8 @@
 /**
  * EMET Guardian Warning Modal
  *
- * Full-screen blocking modal that displays when high-risk transactions are detected.
- * User MUST make a choice (Cancel or Proceed) - there is no dismiss/close option.
- *
- * SECURITY NOTE: This modal is the last line of defense before a potential drain.
- * The UI is intentionally alarming to ensure user attention.
+ * Clean, professional security modal for high-risk transaction detection.
+ * Designed with Linear/Stripe/1Password aesthetic principles.
  */
 
 import React from 'react';
@@ -16,162 +13,160 @@ export interface WarningModalProps {
   onProceed: () => void;
 }
 
-// Inline styles to avoid CSS injection issues and ensure isolation
+// Helper to parse threat info from reason string
+function parseThreatInfo(reason: string): { title: string; description: string } {
+  const colonIndex = reason.indexOf(':');
+  if (colonIndex > 0 && colonIndex < 40) {
+    return {
+      title: reason.substring(0, colonIndex).trim(),
+      description: reason.substring(colonIndex + 1).trim(),
+    };
+  }
+  return { title: 'SECURITY THREAT', description: reason };
+}
+
+// Clean, minimal inline styles
 const styles = {
   overlay: {
     position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(139, 0, 0, 0.97)',
-    zIndex: 2147483647, // Maximum z-index
+    inset: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    zIndex: 2147483647,
     display: 'flex',
-    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    color: '#ffffff',
-    overflow: 'auto',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
-  container: {
-    maxWidth: '600px',
+  modal: {
+    maxWidth: '420px',
     width: '100%',
-    textAlign: 'center' as const,
+    backgroundColor: '#0a0a0a',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px',
+    boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)',
+    overflow: 'hidden',
+  },
+  header: {
+    padding: '24px 24px 0',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '16px',
   },
   iconContainer: {
-    marginBottom: '20px',
+    width: '40px',
+    height: '40px',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  icon: {
-    width: '80px',
-    height: '80px',
-    margin: '0 auto',
-    animation: 'pulse 1.5s ease-in-out infinite',
+  headerText: {
+    flex: 1,
   },
   title: {
-    fontSize: '36px',
-    fontWeight: 'bold' as const,
-    marginBottom: '16px',
-    textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-    letterSpacing: '2px',
+    fontSize: '16px',
+    fontWeight: 600,
+    color: '#fafafa',
+    margin: '0 0 4px',
+    letterSpacing: '-0.01em',
   },
   subtitle: {
-    fontSize: '18px',
-    marginBottom: '30px',
-    opacity: 0.95,
-    lineHeight: '1.5',
+    fontSize: '13px',
+    color: '#ef4444',
+    margin: 0,
+    fontWeight: 500,
   },
-  warningBox: {
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '30px',
-    textAlign: 'left' as const,
-    border: '2px solid rgba(255, 255, 255, 0.3)',
+  threatsList: {
+    padding: '16px 24px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '8px',
+    maxHeight: '240px',
+    overflowY: 'auto' as const,
   },
-  warningTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold' as const,
-    marginBottom: '16px',
-    color: '#ffcccc',
+  threatItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.06)',
+    borderRadius: '8px',
+    padding: '12px',
+  },
+  threatTitle: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: '#ef4444',
+    letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
-    letterSpacing: '1px',
+    marginBottom: '4px',
   },
-  reasonsList: {
-    listStyle: 'none',
-    padding: 0,
+  threatDesc: {
+    fontSize: '13px',
+    color: 'rgba(255, 255, 255, 0.7)',
+    lineHeight: 1.4,
     margin: 0,
   },
-  reasonItem: {
-    padding: '12px 16px',
-    marginBottom: '12px',
-    backgroundColor: 'rgba(255, 0, 0, 0.2)',
-    borderRadius: '8px',
-    borderLeft: '4px solid #ff4444',
-    fontSize: '14px',
-    lineHeight: '1.6',
+  divider: {
+    height: '1px',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    margin: '0 24px',
   },
-  drainWarning: {
-    backgroundColor: 'rgba(255, 200, 0, 0.15)',
-    border: '1px solid rgba(255, 200, 0, 0.5)',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '30px',
-    fontSize: '15px',
-    lineHeight: '1.6',
-  },
-  drainWarningIcon: {
-    display: 'inline-block',
-    marginRight: '8px',
-  },
-  buttonContainer: {
+  actions: {
+    padding: '16px 24px 24px',
     display: 'flex',
-    gap: '16px',
-    justifyContent: 'center',
-    flexWrap: 'wrap' as const,
+    flexDirection: 'column' as const,
+    gap: '8px',
   },
   cancelButton: {
-    backgroundColor: '#ffffff',
-    color: '#8B0000',
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: '#fafafa',
+    color: '#0a0a0a',
     border: 'none',
     borderRadius: '8px',
-    padding: '16px 48px',
-    fontSize: '18px',
-    fontWeight: 'bold' as const,
+    fontSize: '14px',
+    fontWeight: 500,
     cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    transition: 'all 0.15s ease',
   },
   proceedButton: {
+    width: '100%',
+    padding: '12px 16px',
     backgroundColor: 'transparent',
-    color: 'rgba(255, 255, 255, 0.7)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
+    color: 'rgba(255, 255, 255, 0.4)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '8px',
-    padding: '16px 32px',
-    fontSize: '14px',
+    fontSize: '13px',
+    fontWeight: 500,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'all 0.15s ease',
   },
   footer: {
-    marginTop: '30px',
-    fontSize: '12px',
-    opacity: 0.6,
+    padding: '12px 24px',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+  },
+  footerText: {
+    fontSize: '11px',
+    color: 'rgba(255, 255, 255, 0.3)',
+    letterSpacing: '0.02em',
   },
 };
-
-// CSS keyframes for the pulse animation
-const keyframesStyle = `
-  @keyframes emet-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
-  @keyframes emet-shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
-  }
-`;
 
 export const WarningModal: React.FC<WarningModalProps> = ({
   reasons,
   onCancel,
   onProceed,
 }) => {
-  const [proceedHovered, setProceedHovered] = React.useState(false);
   const [cancelHovered, setCancelHovered] = React.useState(false);
+  const [proceedHovered, setProceedHovered] = React.useState(false);
 
-  // Inject keyframes into document
-  React.useEffect(() => {
-    const styleEl = document.createElement('style');
-    styleEl.textContent = keyframesStyle;
-    document.head.appendChild(styleEl);
-    return () => {
-      document.head.removeChild(styleEl);
-    };
-  }, []);
-
-  // Prevent scrolling on the body while modal is open
+  // Prevent scrolling
   React.useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -180,116 +175,105 @@ export const WarningModal: React.FC<WarningModalProps> = ({
     };
   }, []);
 
-  // Block keyboard shortcuts that might dismiss the modal
+  // Block escape key
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Block Escape key
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
       }
     };
     window.addEventListener('keydown', handleKeyDown, true);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, []);
 
   return (
     <div style={styles.overlay} onClick={(e) => e.stopPropagation()}>
-      <div style={styles.container}>
-        {/* Warning Icon */}
-        <div style={styles.iconContainer}>
-          <svg
-            style={{
-              ...styles.icon,
-              animation: 'emet-pulse 1.5s ease-in-out infinite',
-            }}
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 2L1 21h22L12 2z"
-              fill="#ff4444"
-              stroke="#ffffff"
-              strokeWidth="1"
-            />
-            <path
-              d="M12 9v5M12 16v2"
-              stroke="#ffffff"
+      <div style={styles.modal}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.iconContainer}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ef4444"
               strokeWidth="2"
               strokeLinecap="round"
-            />
-          </svg>
+              strokeLinejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <div style={styles.headerText}>
+            <h2 style={styles.title}>Transaction Blocked</h2>
+            <p style={styles.subtitle}>
+              {reasons.length} security {reasons.length === 1 ? 'threat' : 'threats'} detected
+            </p>
+          </div>
         </div>
 
-        {/* Title */}
-        <h1 style={styles.title}>HIGH-RISK TRANSACTION</h1>
-
-        {/* Subtitle */}
-        <p style={styles.subtitle}>
-          EMET Guardian has detected potentially dangerous patterns in this transaction.
-          <br />
-          <strong>Your wallet may be drained if you proceed.</strong>
-        </p>
-
-        {/* Reasons Box */}
-        <div style={styles.warningBox}>
-          <div style={styles.warningTitle}>Detected Threats:</div>
-          <ul style={styles.reasonsList}>
-            {reasons.map((reason, index) => (
-              <li key={index} style={styles.reasonItem}>
-                {reason}
-              </li>
-            ))}
-          </ul>
+        {/* Threats List */}
+        <div style={styles.threatsList}>
+          {reasons.map((reason, index) => {
+            const { title, description } = parseThreatInfo(reason);
+            return (
+              <div key={index} style={styles.threatItem}>
+                <div style={styles.threatTitle}>{title}</div>
+                <p style={styles.threatDesc}>{description}</p>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Drain Warning */}
-        <div style={styles.drainWarning}>
-          <span style={styles.drainWarningIcon}>&#9888;</span>
-          <strong>WARNING:</strong> Signing this transaction could result in the permanent loss
-          of all tokens in the affected accounts. Wallet drains are irreversible.
-          If you did not explicitly request this action, this is likely a scam.
-        </div>
+        {/* Divider */}
+        <div style={styles.divider} />
 
-        {/* Buttons */}
-        <div style={styles.buttonContainer}>
+        {/* Actions */}
+        <div style={styles.actions}>
           <button
             style={{
               ...styles.cancelButton,
-              transform: cancelHovered ? 'scale(1.05)' : 'scale(1)',
-              boxShadow: cancelHovered
-                ? '0 6px 20px rgba(0, 0, 0, 0.4)'
-                : '0 4px 12px rgba(0, 0, 0, 0.3)',
+              backgroundColor: cancelHovered ? '#ffffff' : '#fafafa',
+              transform: cancelHovered ? 'translateY(-1px)' : 'none',
             }}
             onClick={onCancel}
             onMouseEnter={() => setCancelHovered(true)}
             onMouseLeave={() => setCancelHovered(false)}
           >
-            &#10005; Cancel Transaction
+            Reject Transaction
           </button>
-
           <button
             style={{
               ...styles.proceedButton,
-              backgroundColor: proceedHovered ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-              color: proceedHovered ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)',
+              borderColor: proceedHovered ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+              color: proceedHovered ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.4)',
+              backgroundColor: proceedHovered ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             }}
             onClick={onProceed}
             onMouseEnter={() => setProceedHovered(true)}
             onMouseLeave={() => setProceedHovered(false)}
           >
-            I understand the risks, proceed anyway
+            Proceed anyway
           </button>
         </div>
 
         {/* Footer */}
         <div style={styles.footer}>
-          EMET Guardian v1.0 | This is a security warning, not financial advice.
-          <br />
-          Always verify transactions independently.
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.3)"
+            strokeWidth="2"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span style={styles.footerText}>EMET Guardian</span>
         </div>
       </div>
     </div>
@@ -298,7 +282,6 @@ export const WarningModal: React.FC<WarningModalProps> = ({
 
 /**
  * Render the warning modal to a container element
- * Used by the injection script to display the modal
  */
 export function renderWarningModal(
   container: HTMLElement,
@@ -306,7 +289,6 @@ export function renderWarningModal(
   onCancel: () => void,
   onProceed: () => void
 ): () => void {
-  // Dynamic import of ReactDOM to avoid bundling issues
   const React = require('react');
   const ReactDOM = require('react-dom/client');
 
@@ -325,10 +307,7 @@ export function renderWarningModal(
     })
   );
 
-  // Return cleanup function
-  return () => {
-    root.unmount();
-  };
+  return () => root.unmount();
 }
 
 export default WarningModal;
