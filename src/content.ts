@@ -69,35 +69,6 @@
   injectScript();
 
   /**
-   * Alternative injection method using inline script
-   * Fallback in case external script loading fails
-   */
-  function injectInlineScript() {
-    try {
-      const script = document.createElement('script');
-      script.textContent = `
-        // Minimal inline hook for fallback
-        (function() {
-          if (window.__EMET_GUARDIAN_INSTALLED__) return;
-          console.log('[EMET] Inline fallback active - waiting for main hook');
-        })();
-      `;
-      const target = document.head || document.documentElement;
-      if (target.firstChild) {
-        target.insertBefore(script, target.firstChild);
-      } else {
-        target.appendChild(script);
-      }
-      script.remove();
-    } catch (e) {
-      // Silent fail for CSP-restricted pages
-    }
-  }
-
-  // Try inline injection as well for redundancy
-  injectInlineScript();
-
-  /**
    * Listen for messages from the injected script
    * This allows the hook to communicate with the extension if needed
    */
