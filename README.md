@@ -68,7 +68,7 @@ This is a first-line defense, not a complete security solution. It does **NOT**:
 
 ```bash
 # Clone the repository
-git clone https://github.com/EmetLabs/Emet-guardian.git)
+git clone https://github.com/EmetLabs/Emet-guardian.git
 
 cd Emet-guardian
 
